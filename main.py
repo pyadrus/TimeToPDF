@@ -1,8 +1,14 @@
 import os
 import tkinter as tk
-from tkinter import messagebox, colorchooser
+from tkinter import colorchooser, messagebox
+
+import os
+import tkinter as tk
+from tkinter import messagebox
+import fitz  # PyMuPDF
 from PIL import Image, ImageDraw, ImageFont
 from tkcalendar import Calendar
+import fitz  # PyMuPDF
 
 # --- НАСТРОЙКИ ПУТЕЙ ---
 INPUT_FOLDER = "input"
@@ -14,7 +20,7 @@ selected_color = "#FF0000"
 
 # --- ФУНКЦИИ ---
 def scan_images(folder_path):
-    image_extensions = ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.webp']
+    image_extensions = [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp"]
     try:
         files = os.listdir(folder_path)
         return [f for f in files if os.path.splitext(f)[1].lower() in image_extensions]
@@ -22,11 +28,13 @@ def scan_images(folder_path):
         messagebox.showerror("Ошибка", f"Не удалось открыть папку:\n{e}")
         return []
 
+
 def refresh_image_list():
     image_list.delete(0, tk.END)
     images = scan_images(INPUT_FOLDER)
     for img in images:
         image_list.insert(tk.END, img)
+
 
 def choose_color():
     global selected_color
@@ -34,6 +42,7 @@ def choose_color():
     if color_code[1]:
         selected_color = color_code[1]
         color_display.config(bg=selected_color)
+
 
 def put_the_date_on_all_photos():
     try:
@@ -46,7 +55,9 @@ def put_the_date_on_all_photos():
     images = scan_images(INPUT_FOLDER)
 
     if not images:
-        messagebox.showwarning("Предупреждение", "В папке нет изображений для обработки.")
+        messagebox.showwarning(
+            "Предупреждение", "В папке нет изображений для обработки."
+        )
         return
 
     processed, failed = 0, 0
@@ -73,7 +84,7 @@ def put_the_date_on_all_photos():
             # Координаты правого нижнего угла с отступами
             padding = 25
             vertical_offset = 25  # Поднимаем дату на 25 пикселей вверх
-            
+
             x = image_width - text_width - padding
             y = image_height - text_height - padding - vertical_offset
 
@@ -81,14 +92,68 @@ def put_the_date_on_all_photos():
             draw.text((x, y), date_str, fill=selected_color, font=font)
 
             output_path = os.path.join(OUTPUT_FOLDER, filename)
-            
+
             image.save(output_path)
             processed += 1
         except Exception as e:
             failed += 1
             print(f"Ошибка при обработке {filename}: {e}")
 
-    messagebox.showinfo("Результат", f"Обработано: {processed} файлов\nНеудачно: {failed} файлов")
+    messagebox.showinfo(
+        "Результат", f"Обработано: {processed} файлов\nНеудачно: {failed} файлов"
+    )
+
+
+def convert_pdfs_to_jpgs():
+    
+
+    pdf_files = [f for f in os.listdir(INPUT_FOLDER) if f.lower().endswith(".pdf")]
+
+    if not pdf_files:
+        messagebox.showwarning("Предупреждение", "В папке input нет PDF-файлов.")
+        return
+
+    processed = 0
+    failed = 0
+
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+    for pdf_file in pdf_files:
+        input_path = os.path.join(INPUT_FOLDER, pdf_file)
+        output_name = os.path.splitext(pdf_file)[0] + ".jpg"
+        output_path = os.path.join(OUTPUT_FOLDER, output_name)
+
+        try:
+            doc = fitz.open(input_path)
+            page = doc.load_page(0)  # Первая страница
+            image_list = page.get_images(full=True)
+
+            if image_list:
+                # Берём первое изображение на странице
+                xref = image_list[0][0]
+                base_image = doc.extract_image(xref)
+                image_bytes = base_image["image"]
+
+                # Сохраняем как JPG
+                with open(output_path, "wb") as img_file:
+                    img_file.write(image_bytes)
+
+                processed += 1
+            else:
+                failed += 1
+                print(f"Нет изображений в файле {pdf_file}")
+        except Exception as e:
+            failed += 1
+            print(f"Ошибка при обработке {pdf_file}: {e}")
+        finally:
+            doc.close()
+
+    messagebox.showinfo(
+        "Результат конвертации",
+        f"Успешно: {processed} файлов\nНеудачно: {failed} файлов",
+    )
+    refresh_image_list()
+
 
 # --- ИНТЕРФЕЙС ---
 root = tk.Tk()
@@ -101,8 +166,10 @@ main_frame = tk.Frame(root, padx=20, pady=20)
 main_frame.pack(fill=tk.BOTH, expand=True)
 
 # --- Календарь ---
-tk.Label(main_frame, text="Выберите дату для добавления на изображения:", font=("Arial", 12)).pack(anchor='w')
-cal = Calendar(main_frame, selectmode='day', year=2025, month=1, day=1, locale='ru')
+tk.Label(
+    main_frame, text="Выберите дату для добавления на изображения:", font=("Arial", 12)
+).pack(anchor="w")
+cal = Calendar(main_frame, selectmode="day", year=2025, month=1, day=1, locale="ru")
 cal.pack(pady=5)
 
 # --- НАСТРОЙКИ ЦВЕТА И ШРИФТА ---
@@ -110,22 +177,49 @@ settings_frame = tk.Frame(main_frame)
 settings_frame.pack(fill=tk.X, pady=10)
 
 # Цвет
-tk.Label(settings_frame, text="Цвет текста:", font=("Arial", 10)).grid(row=0, column=0, sticky='w')
-tk.Button(settings_frame, text="Выбрать цвет", command=choose_color).grid(row=0, column=1, sticky='w', padx=5)
+tk.Label(settings_frame, text="Цвет текста:", font=("Arial", 10)).grid(
+    row=0, column=0, sticky="w"
+)
+tk.Button(settings_frame, text="Выбрать цвет", command=choose_color).grid(
+    row=0, column=1, sticky="w", padx=5
+)
 color_display = tk.Label(settings_frame, width=3, bg=selected_color, relief="ridge")
 color_display.grid(row=0, column=2, padx=5)
 
 # Размер шрифта
-tk.Label(settings_frame, text="Размер шрифта:", font=("Arial", 10)).grid(row=1, column=0, sticky='w', pady=5)
-tk.Entry(settings_frame, textvariable=font_size_var, width=5).grid(row=1, column=1, sticky='w', padx=5)
+tk.Label(settings_frame, text="Размер шрифта:", font=("Arial", 10)).grid(
+    row=1, column=0, sticky="w", pady=5
+)
+tk.Entry(settings_frame, textvariable=font_size_var, width=5).grid(
+    row=1, column=1, sticky="w", padx=5
+)
 
 # --- Кнопка обработки ---
-tk.Button(main_frame, text="Добавить дату ко всем изображениям",
-          command=put_the_date_on_all_photos,
-          bg="green", fg="white", font=("Arial", 12), height=2).pack(pady=10, fill=tk.X)
+tk.Button(
+    main_frame,
+    text="Добавить дату ко всем изображениям",
+    command=put_the_date_on_all_photos,
+    bg="green",
+    fg="white",
+    font=("Arial", 12),
+    height=2,
+).pack(pady=10, fill=tk.X)
+
+# --- Кнопка конвертации PDF в JPG ---
+tk.Button(
+    main_frame,
+    text="Конвертировать PDF в JPG",
+    command=convert_pdfs_to_jpgs,
+    bg="blue",
+    fg="white",
+    font=("Arial", 12),
+    height=2,
+).pack(pady=5, fill=tk.X)
 
 # --- Список изображений ---
-list_frame = tk.LabelFrame(main_frame, text="Изображения в папке input", padx=10, pady=10, font=("Arial", 10))
+list_frame = tk.LabelFrame(
+    main_frame, text="Изображения в папке input", padx=10, pady=10, font=("Arial", 10)
+)
 list_frame.pack(fill=tk.BOTH, expand=True)
 
 image_list = tk.Listbox(list_frame, height=12, width=60, font=("Courier New", 10))
