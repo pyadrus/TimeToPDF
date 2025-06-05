@@ -71,9 +71,11 @@ def put_the_date_on_all_photos():
             text_height = bbox[3] - bbox[1]
 
             # Координаты правого нижнего угла с отступами
-            padding = 10
+            padding = 25
+            vertical_offset = 25  # Поднимаем дату на 25 пикселей вверх
+            
             x = image_width - text_width - padding
-            y = image_height - text_height - padding
+            y = image_height - text_height - padding - vertical_offset
 
             # Наносим текст по выбранным координатам
             draw.text((x, y), date_str, fill=selected_color, font=font)
