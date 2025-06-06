@@ -1,14 +1,11 @@
 import os
 import tkinter as tk
-from tkinter import colorchooser, messagebox
-
-import os
-import tkinter as tk
+from tkinter import colorchooser
 from tkinter import messagebox
+
 import fitz  # PyMuPDF
 from PIL import Image, ImageDraw, ImageFont
 from tkcalendar import Calendar
-import fitz  # PyMuPDF
 
 # --- НАСТРОЙКИ ПУТЕЙ ---
 INPUT_FOLDER = "input"
@@ -105,8 +102,6 @@ def put_the_date_on_all_photos():
 
 
 def convert_pdfs_to_jpgs():
-    
-
     pdf_files = [f for f in os.listdir(INPUT_FOLDER) if f.lower().endswith(".pdf")]
 
     if not pdf_files:
