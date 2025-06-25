@@ -89,7 +89,78 @@ def put_the_date_on_all_photos():
             draw.text((x, y), date_str, fill=selected_color, font=font)
 
             output_path = os.path.join(OUTPUT_FOLDER, filename)
+            image.save(output_path)
+            processed += 1
+        except Exception as e:
+            failed += 1
+            print(f"Ошибка при обработке {filename}: {e}")
 
+    messagebox.showinfo(
+        "Результат", f"Обработано: {processed} файлов\nНеудачно: {failed} файлов"
+    )
+
+
+def put_date_and_name_on_all_photos():
+    try:
+        font_size = int(font_size_var.get())
+    except ValueError:
+        messagebox.showerror("Ошибка", "Размер шрифта должен быть числом.")
+        return
+
+    selected_date = cal.selection_get()
+    images = scan_images(INPUT_FOLDER)
+
+    if not images:
+        messagebox.showwarning(
+            "Предупреждение", "В папке нет изображений для обработки."
+        )
+        return
+
+    processed, failed = 0, 0
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+    date_str = selected_date.strftime("%Y-%m-%d")
+
+    for filename in images:
+        input_path = os.path.join(INPUT_FOLDER, filename)
+        try:
+            image = Image.open(input_path)
+            draw = ImageDraw.Draw(image)
+
+            try:
+                font = ImageFont.truetype("arial.ttf", font_size)
+            except:
+                font = ImageFont.load_default()
+
+            # Удаляем расширение из имени файла
+            filename_without_ext = os.path.splitext(filename)[0]
+
+            # Получение размеров изображения и текста
+            image_width, image_height = image.size
+            bbox_date = font.getbbox(date_str)
+            bbox_name = font.getbbox(filename_without_ext)
+            text_width_date = bbox_date[2] - bbox_date[0]
+            text_height_date = bbox_date[3] - bbox_date[1]
+            text_width_name = bbox_name[2] - bbox_name[0]
+            text_height_name = bbox_name[3] - bbox_name[1]
+
+            # Координаты правого нижнего угла с отступами
+            padding = 25
+            vertical_offset = 25
+            line_spacing = 10  # Отступ между именем файла и датой
+
+            # Координаты для имени файла (выше даты)
+            x_name = image_width - text_width_name - padding
+            y_name = image_height - text_height_date - text_height_name - padding - vertical_offset - line_spacing
+
+            # Координаты для даты
+            x_date = image_width - text_width_date - padding
+            y_date = image_height - text_height_date - padding - vertical_offset
+
+            # Наносим имя файла (без расширения) и дату
+            draw.text((x_name, y_name), filename_without_ext, fill=selected_color, font=font)
+            draw.text((x_date, y_date), date_str, fill=selected_color, font=font)
+
+            output_path = os.path.join(OUTPUT_FOLDER, filename)
             image.save(output_path)
             processed += 1
         except Exception as e:
@@ -189,7 +260,7 @@ tk.Entry(settings_frame, textvariable=font_size_var, width=5).grid(
     row=1, column=1, sticky="w", padx=5
 )
 
-# --- Кнопка обработки ---
+# --- Кнопка обработки (только дата) ---
 tk.Button(
     main_frame,
     text="Добавить дату ко всем изображениям",
@@ -199,6 +270,17 @@ tk.Button(
     font=("Arial", 12),
     height=2,
 ).pack(pady=10, fill=tk.X)
+
+# --- Новая кнопка обработки (дата + имя файла) ---
+tk.Button(
+    main_frame,
+    text="Добавить дату и имя файла ко всем изображениям",
+    command=put_date_and_name_on_all_photos,
+    bg="purple",
+    fg="white",
+    font=("Arial", 12),
+    height=2,
+).pack(pady=5, fill=tk.X)
 
 # --- Кнопка конвертации PDF в JPG ---
 tk.Button(
