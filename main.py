@@ -15,7 +15,6 @@ OUTPUT_FOLDER = "output"
 selected_color = "#FF0000"
 
 
-
 # --- ФУНКЦИИ ---
 def scan_images(folder_path):
     image_extensions = [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp"]
@@ -26,11 +25,13 @@ def scan_images(folder_path):
         messagebox.showerror("Ошибка", f"Не удалось открыть папку:\n{e}")
         return []
 
+
 def refresh_image_list():
     image_list.delete(0, tk.END)
     images = scan_images(INPUT_FOLDER)
     for img in images:
         image_list.insert(tk.END, img)
+
 
 def ensure_folder_exists(folder_path):
     """Функция для создания папки, если она не существует"""
@@ -43,9 +44,11 @@ def ensure_folder_exists(folder_path):
             return False
     return True
 
+
 # Перед использованием папок, убедитесь в их существовании
 ensure_folder_exists(INPUT_FOLDER)
 ensure_folder_exists(OUTPUT_FOLDER)
+
 
 def choose_color():
     global selected_color
@@ -92,9 +95,12 @@ def put_the_date_on_all_photos():
             text_width = bbox[2] - bbox[0]
             text_height = bbox[3] - bbox[1]
 
-            # Координаты правого нижнего угла с отступами
-            padding = 50
-            vertical_offset = 50  # Поднимаем дату на 50 пикселей вверх
+            try:
+                padding = int(padding_right_var.get())
+                vertical_offset = int(padding_bottom_var.get())
+            except ValueError:
+                messagebox.showerror("Ошибка", "Отступы должны быть числовыми значениями.")
+                return
 
             x = image_width - text_width - padding
             y = image_height - text_height - padding - vertical_offset
@@ -158,8 +164,12 @@ def put_date_and_name_on_all_photos():
             text_height_name = bbox_name[3] - bbox_name[1]
 
             # Координаты правого нижнего угла с отступами
-            padding = 25
-            vertical_offset = 25
+            try:
+                padding = int(padding_right_var.get())
+                vertical_offset = int(padding_bottom_var.get())
+            except ValueError:
+                messagebox.showerror("Ошибка", "Отступы должны быть числовыми значениями.")
+                return
             line_spacing = 10  # Отступ между именем файла и датой
 
             # Координаты для имени файла (выше даты)
@@ -265,6 +275,17 @@ tk.Button(settings_frame, text="Выбрать цвет", command=choose_color).
 )
 color_display = tk.Label(settings_frame, width=3, bg=selected_color, relief="ridge")
 color_display.grid(row=0, column=2, padx=5)
+
+padding_right_var = tk.StringVar(value="50")
+padding_bottom_var = tk.StringVar(value="50")
+
+# Отступ справа
+tk.Label(settings_frame, text="Отступ справа:", font=("Arial", 10)).grid(row=0, column=3, sticky="w", padx=(10, 0))
+tk.Entry(settings_frame, textvariable=padding_right_var, width=5).grid(row=0, column=4, sticky="w")
+
+# Отступ снизу
+tk.Label(settings_frame, text="Отступ снизу:", font=("Arial", 10)).grid(row=0, column=5, sticky="w", padx=(10, 0))
+tk.Entry(settings_frame, textvariable=padding_bottom_var, width=5).grid(row=0, column=6, sticky="w")
 
 # Размер шрифта
 tk.Label(settings_frame, text="Размер шрифта:", font=("Arial", 10)).grid(

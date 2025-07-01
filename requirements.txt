@@ -1,4 +1,4 @@
 PyMuPDF
-pillow~=11.2.1
-tkcalendar~=1.6.1
+pillow
+tkcalendar
 colorchooser
