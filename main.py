@@ -15,6 +15,7 @@ OUTPUT_FOLDER = "output"
 selected_color = "#FF0000"
 
 
+
 # --- ФУНКЦИИ ---
 def scan_images(folder_path):
     image_extensions = [".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp"]
@@ -25,13 +26,26 @@ def scan_images(folder_path):
         messagebox.showerror("Ошибка", f"Не удалось открыть папку:\n{e}")
         return []
 
-
 def refresh_image_list():
     image_list.delete(0, tk.END)
     images = scan_images(INPUT_FOLDER)
     for img in images:
         image_list.insert(tk.END, img)
 
+def ensure_folder_exists(folder_path):
+    """Функция для создания папки, если она не существует"""
+    if not os.path.exists(folder_path):
+        try:
+            os.makedirs(folder_path)
+            print(f"Папка {folder_path} успешно создана.")
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось создать папку {folder_path}:\n{e}")
+            return False
+    return True
+
+# Перед использованием папок, убедитесь в их существовании
+ensure_folder_exists(INPUT_FOLDER)
+ensure_folder_exists(OUTPUT_FOLDER)
 
 def choose_color():
     global selected_color
@@ -79,8 +93,8 @@ def put_the_date_on_all_photos():
             text_height = bbox[3] - bbox[1]
 
             # Координаты правого нижнего угла с отступами
-            padding = 25
-            vertical_offset = 25  # Поднимаем дату на 25 пикселей вверх
+            padding = 50
+            vertical_offset = 50  # Поднимаем дату на 50 пикселей вверх
 
             x = image_width - text_width - padding
             y = image_height - text_height - padding - vertical_offset
